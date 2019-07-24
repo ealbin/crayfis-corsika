@@ -1,1 +1,6 @@
-//#include <corsis/utils/input.h>
+
+#include <corsis/utils/input.h>
+
+int getint() {
+    return 5;
+}
