@@ -32,11 +32,9 @@ target_link_libraries (
 target_include_directories (
     CORSISutils
     INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
-#PROJECT_BINARY_DIR
-#CMAKE_SOURCE_DIR
 
 install (
     TARGETS CORSISutils
