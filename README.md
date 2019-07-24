@@ -85,4 +85,5 @@ firefox ../corsika-install/share/doc/html/index.html
 ```
 
 ### CRAYFIS customizations
+(CORSIS) COsmic Ray SImulations for Smartphones
 TODO: this documentation
