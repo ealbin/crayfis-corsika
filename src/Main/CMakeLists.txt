@@ -31,6 +31,18 @@ add_executable (${SUBPROJECT_NAME} ${${SUBPROJECT}_SOURCES})
 target_link_libraries (
     ${SUBPROJECT_NAME}
     ${SUBPROJECT}utils
+    CORSIKAcascade
+    CORSIKAenvironment
+    CORSIKAgeometry
+    CORSIKAlogging
+    CORSIKAparticles
+    CORSIKAprocesses
+    CORSIKAprocesssequence
+    CORSIKArandom
+    CORSIKAsetup
+    CORSIKAunits
+    CORSIKAutilities
+    CORSIKAthirdparty
     )
 
 install (TARGETS ${SUBPROJECT_NAME} DESTINATION bin)
