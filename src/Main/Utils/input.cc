@@ -29,6 +29,44 @@ const struct option long_options[] = {
     {0,         0,                 0,  0 }
 };
 
+/*
+ * Things:
+ *  assume this is for nuclei only
+ *
+ *  reserved:  -h --help
+ *
+ *  -H --height
+ *  (opt) atmosphere height (default 112.8_km)
+ *  -i --impact
+ *  (opt) start altitude (default atmosphere height)
+ *  -s --seed
+ *  (opt) random seed (default: _____ todo)
+ *  -d --density
+ *  (opt) air density
+ *  -x --oxygen
+ *  -n --nitrogen (can't specify both)
+ *  (opt) oxygen fraction (nitrogen fraction implied) (default: .20946)
+ *  -Z --protons
+ *  (req) Z
+ *  -A --nucleons
+ *  -M --mass
+ *  (req?) A or mass
+ *  -E --energy
+ *  (req) E
+ *  -t --theta
+ *  (opt) theta (default 0)
+ *  -p --phi
+ *  (opt) phi (default 0)
+ *  -S --sibyll, -P --pythia
+ *  (opt) sibyll or pythia (default sibyll)
+ *  -c --cut
+ *  (opt) particle cut (default ? 80_GeV)
+ *  -o --output
+ *  (opt) output file(s)
+ *
+ */
+
+
 // simple options as a single-character list
 // characters with a following colon(:) have arguments, e.g. -a 5 => "a:"
 const char *options = "habc:d:012";

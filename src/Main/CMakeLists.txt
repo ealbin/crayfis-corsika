@@ -40,9 +40,25 @@ target_link_libraries (
     CORSIKAprocesssequence
     CORSIKArandom
     CORSIKAsetup
+    CORSIKAstackinterface
+    CORSIKAthirdparty
     CORSIKAunits
     CORSIKAutilities
-    CORSIKAthirdparty
+    DummyStack
+    NuclearStackExtension
+    ProcessEnergyLoss
+    ProcessHadronicElasticModel
+    ProcessNullModel
+    ProcessObservationPlane
+    ProcessParticleCut
+    #ProcessPythia
+    ProcessSibyll
+    ProcessStackInspector
+    ProcessSwitch
+    ProcessTrackingLine
+    ProcessTrackWriter
+    ProcessUrQMD
+    SuperStupidStack
     )
 
 install (TARGETS ${SUBPROJECT_NAME} DESTINATION bin)
