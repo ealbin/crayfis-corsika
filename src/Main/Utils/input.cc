@@ -1,170 +1,173 @@
-// TODO: --help doesn't work right yet
-// TODO: options
 
 #include <corsis/utils/input.h>
+#include <corsis/utils/options.h>
 
-#include <getopt.h>
-#include <stdio.h>  /* for printf */
-#include <string>
-
-// long option struct defined in getopt.h
-// { name, has_arg, flag, val }
-//    name: (const char*) duh
-// has_arg: (int) no_argument(or 0),
-//                required_argument(or 1),
-//                optional_argument(or 2)
-//    flag: (int*) variable that is set to val only if option is found
-//     val: (int) value returned by getopt_long() if option is found
-// The last element of the array has to be filled with zeros
-int help_flag = 0;
-const int NEED_HELP = 1;
-const struct option long_options[] = {
-    {"help",    no_argument,       &help_flag,  NEED_HELP },
-    {"add",     required_argument, 0,  0 },
-    {"append",  no_argument,       0,  0 },
-    {"delete",  required_argument, 0,  0 },
-    {"verbose", no_argument,       0,  0 },
-    {"create",  required_argument, 0, 'c'},
-    {"file",    required_argument, 0,  0 },
-    {0,         0,                 0,  0 }
-};
-
-/*
- * Things:
- *  assume this is for nuclei only
- *
- *  reserved:  -h --help
- *
- *  -H --height
- *  (opt) atmosphere height (default 112.8_km)
- *  -i --impact
- *  (opt) start altitude (default atmosphere height)
- *  -s --seed
- *  (opt) random seed (default: _____ todo)
- *  -d --density
- *  (opt) air density
- *  -x --oxygen
- *  -n --nitrogen (can't specify both)
- *  (opt) oxygen fraction (nitrogen fraction implied) (default: .20946)
- *  -Z --protons
- *  (req) Z
- *  -A --nucleons
- *  -M --mass
- *  (req?) A or mass
- *  -E --energy
- *  (req) E
- *  -t --theta
- *  (opt) theta (default 0)
- *  -p --phi
- *  (opt) phi (default 0)
- *  -S --sibyll, -P --pythia
- *  (opt) sibyll or pythia (default sibyll)
- *  -c --cut
- *  (opt) particle cut (default ? 80_GeV)
- *  -o --output
- *  (opt) output file(s)
- *
- */
+#include <stdlib.h> /* atof */
 
 
-// simple options as a single-character list
-// characters with a following colon(:) have arguments, e.g. -a 5 => "a:"
-const char *options = "habc:d:012";
-
-void help(char *command) {
-    std::string cmd (command);
+std::string getCmdName(char *v_cmd) {
+    std::string cmd(v_cmd);
     const std::size_t last_slash_index = cmd.find_last_of("\\/");
     if (std::string::npos != last_slash_index)
         cmd.erase(0, last_slash_index + 1);
+    return cmd;
+}
+
+void showHelp(const std::string& cmd) {
     printf("\n");
     printf("Usage: %s [OPTION]...\n", cmd.c_str());
     printf("Simulate extensive air showers\n");
     printf("\n");
-    printf("Options are listed here:\n");
+    for (Help help_line : options_help)
+        printf("%s\n", help_line.option.c_str());
 }
 
-void readInput(int argc, char *argv[]) {
+void showVersion(const std::string& cmd) {
+    printf("\n");
+    printf("%s version %s\n", cmd.c_str(), VERSION.c_str());
+    printf("2019 CRAYFIS Project.. or something\n");
+}
 
-    // ?
-    int digit_optind = 0;
+void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
+
+    const std::string& cmd = getCmdName(v_argv[0]);
+
+    // disable automatic error messages from getopt
+    opterr = 0;
 
     // parse input
-    while (1) {
+    while (true) {
 
         // getopt_long returns -1 when option parsing is exhausted, otherwise
         // it's the options character as specified in options above
-        static int option_val = 0;
+        int opt_val = -1;
 
         // index of long_options[] if long option is found
-        int long_option_index = 0;
+        int long_opt_index = -1;
 
-        // makes sure to begin with argv[1] if readInput is called again
-        int this_option_optind = optind ? optind : 1;
+        // option index before getopt()
+        int start_index = optind ? optind : 1;
 
-        option_val = getopt_long(argc, argv,
-                                 options, long_options, &long_option_index);
-        if (option_val == -1)
+        // process next option
+        opt_val = getopt_long(v_argc, v_argv, options,
+                              long_options, &long_opt_index);
+
+        // all options have been parsed
+        if (opt_val == -1)
             break;
 
-        switch (option_val) {
-        case NEED_HELP:
-            help(argv[0]);
-            break;
-        case 'h':
-            help(argv[0]);
-            help_flag = NEED_HELP;
-            break;
+        switch (opt_val) {
 
-        case 0:
-            printf("option %s", long_options[long_option_index].name);
-            if (optarg)
-                printf(" with arg %s", optarg);
-            printf("\n");
-            break;
+            // nucleons
+            case 'A':
+                v_scenario.nucleons = std::string(optarg);
+                break;
 
-        case '0':
-        case '1':
-        case '2':
-            if (digit_optind != 0 && digit_optind != this_option_optind)
-                printf("digits occur in two different argv-elements.\n");
-            digit_optind = this_option_optind;
-            printf("option %c\n", option_val);
-            break;
+            // cut
+            case 'c':
+                v_scenario.cut = std::string(optarg);
+                break;
 
-        case 'a':
-            printf("option a\n");
-            break;
+            // density
+            case 'd':
+                v_scenario.density = std::string(optarg);
+                break;
 
-        case 'b':
-            printf("option b\n");
-            break;
+            // energy
+            case 'E':
+                v_scenario.energy = std::string(optarg);
+                break;
 
-        case 'c':
-            printf("option c with value '%s'\n", optarg);
-            break;
+            // height
+            case 'H':
+                v_scenario.height = std::string(optarg);
+                break;
 
-        case 'd':
-            printf("option d with value '%s'\n", optarg);
-            break;
+            // impact
+            case 'i':
+                v_scenario.impact = std::string(optarg);
+                break;
 
-        case '?':
-            help(argv[0]);
-            help_flag = NEED_HELP;
-            break;
+            // mass
+            case 'M':
+                v_scenario.mass = std::string(optarg);
+                break;
 
-        default:
-            printf("?? getopt returned character code 0%o ??\n", option_val);
+            // nitrogen
+            case 'n':
+                v_scenario.nitrogen = std::string(optarg);
+                break;
+
+            // output
+            case 'o':
+                v_scenario.output = std::string(optarg);
+                break;
+
+            // phi
+            case 'p':
+                v_scenario.phi = std::string(optarg);
+                break;
+
+            // pythia
+            case 'P':
+                v_scenario.pythia = true;
+                break;
+
+            // seed
+            case 's':
+                v_scenario.seed = std::string(optarg);
+                break;
+
+            // sibyll
+            case 'S':
+                v_scenario.sibyll = true;
+                break;
+
+            // theta
+            case 't':
+                v_scenario.theta = std::string(optarg);
+                break;
+
+            // oxygen
+            case 'x':
+                v_scenario.oxygen = std::string(optarg);
+                break;
+
+            // protons
+            case 'Z':
+                v_scenario.protons = std::string(optarg);
+                break;
+
+            // help
+            case 'h':
+                showHelp(cmd);
+                v_scenario.exit = true;
+                return;
+
+            // version
+            case 'V':
+                showVersion(cmd);
+                v_scenario.exit = true;
+                return;
+
+            case '?':
+                printf("%s: option '%s' requires an argument\n", cmd.c_str(), v_argv[start_index]);
+                printf("Try '%s --help' for more information.\n", cmd.c_str());
+                v_scenario.exit = true;
+                return;
+
+            // in case of error
+            default:
+                printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[start_index]);
+                printf("Try '%s --help' for more information.\n", cmd.c_str());
+                v_scenario.exit = true;
+                return;
         }
     }
 
-    if (help_flag == NEED_HELP) {
-        return;
-    }
-
-    if (optind < argc) {
-        printf("non-option ARGV-elements: ");
-        while (optind < argc)
-            printf("%s ", argv[optind++]);
-        printf("\n");
+    if (optind < v_argc) {
+        printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[optind]);
+        printf("Try '%s --help' for more information.\n", cmd.c_str());
+        v_scenario.exit = true;
     }
 }

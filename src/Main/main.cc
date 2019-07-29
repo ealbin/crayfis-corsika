@@ -31,7 +31,14 @@ int main(int argc, char* argv[]) {
     //      air density and composition fraction
     //      primary Z, A (or mass), and E (or particle type! e.g. gamma)
     //      primary direction theta, phi
-    readInput(argc, argv);
+    Scenario scenario = {};
+    readInput(argc, argv, scenario);
+    if (scenario.exit) {
+        std::cout << "\nearly exit\n";
+        return 1;
+    }
+    std::cout << "\nearly exit\n";
+    return 0;
 
     // this is the CORSIKA 7 start of atmosphere/universe
     const units::si::LengthType height_atmosphere = 112.8_km;
@@ -159,9 +166,9 @@ int main(int argc, char* argv[]) {
 
 
     // define air shower object, run simulation
-    cascade::Cascade EAS(environment, tracking, sequence, stack);
-    EAS.Init();
-    EAS.Run();
+    //cascade::Cascade EAS(environment, tracking, sequence, stack);
+    //EAS.Init();
+    //EAS.Run();
 
     ////////////////////////////////////////////////////////////////////////////
 
