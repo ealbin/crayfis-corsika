@@ -2,9 +2,6 @@
 #include <corsis/utils/input.h>
 #include <corsis/utils/options.h>
 
-#include <stdlib.h> /* atof */
-
-
 std::string getCmdName(char *v_cmd) {
     std::string cmd(v_cmd);
     const std::size_t last_slash_index = cmd.find_last_of("\\/");
@@ -13,19 +10,24 @@ std::string getCmdName(char *v_cmd) {
     return cmd;
 }
 
-void showHelp(const std::string& cmd) {
+void showHelp(const std::string& v_cmd) {
     printf("\n");
-    printf("Usage: %s [OPTION]...\n", cmd.c_str());
+    printf("Usage: %s [OPTION]...\n", v_cmd.c_str());
     printf("Simulate extensive air showers\n");
     printf("\n");
     for (Help help_line : options_help)
         printf("%s\n", help_line.option.c_str());
 }
 
-void showVersion(const std::string& cmd) {
+void showVersion(const std::string& v_cmd) {
     printf("\n");
-    printf("%s version %s\n", cmd.c_str(), VERSION.c_str());
+    printf("%s version %s\n", v_cmd.c_str(), VERSION.c_str());
     printf("2019 CRAYFIS Project.. or something\n");
+}
+
+void showFormatErr(const std::string& v_cmd, char *v_arg) {
+    printf("%s: option '%s' is not formatted properly\n", v_cmd.c_str(), v_arg);
+    printf("Try '%s --help' for more information.\n", v_cmd.c_str());
 }
 
 void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
@@ -60,107 +62,167 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // nucleons
             case 'A':
-                v_scenario.nucleons = std::string(optarg);
+                if (v_scenario.setNucleons(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // cut
             case 'c':
-                v_scenario.cut = std::string(optarg);
+                if (v_scenario.setCut(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // density
             case 'd':
-                v_scenario.density = std::string(optarg);
+                if (v_scenario.setDensity(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // energy
             case 'E':
-                v_scenario.energy = std::string(optarg);
+                if (v_scenario.setEnergy(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // height
             case 'H':
-                v_scenario.height = std::string(optarg);
+                if (v_scenario.setHeight(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // impact
             case 'i':
-                v_scenario.impact = std::string(optarg);
+                if (v_scenario.setImpact(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // mass
             case 'M':
-                v_scenario.mass = std::string(optarg);
+                if (v_scenario.setMass(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // nitrogen
             case 'n':
-                v_scenario.nitrogen = std::string(optarg);
+                if (v_scenario.setNitrogen(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // output
             case 'o':
-                v_scenario.output = std::string(optarg);
+                if (v_scenario.setOutput(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // phi
             case 'p':
-                v_scenario.phi = std::string(optarg);
+                if (v_scenario.setPhi(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // pythia
             case 'P':
-                v_scenario.pythia = true;
+                if (v_scenario.setPythia()) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // seed
-            case 's':
-                v_scenario.seed = std::string(optarg);
-                break;
+            //case 's':
+            //    v_scenario.seed = std::string(optarg);
+            //    break;
 
             // sibyll
             case 'S':
-                v_scenario.sibyll = true;
+                if (v_scenario.setSibyll()) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // theta
             case 't':
-                v_scenario.theta = std::string(optarg);
+                if (v_scenario.setTheta(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // oxygen
             case 'x':
-                v_scenario.oxygen = std::string(optarg);
+                if (v_scenario.setOxygen(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // protons
             case 'Z':
-                v_scenario.protons = std::string(optarg);
+                if (v_scenario.setProtons(optarg)) {
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                }
                 break;
 
             // help
             case 'h':
                 showHelp(cmd);
-                v_scenario.exit = true;
+                v_scenario.setError();
                 return;
 
             // version
             case 'V':
                 showVersion(cmd);
-                v_scenario.exit = true;
+                v_scenario.setError();
                 return;
 
             case '?':
                 printf("%s: option '%s' requires an argument\n", cmd.c_str(), v_argv[start_index]);
                 printf("Try '%s --help' for more information.\n", cmd.c_str());
-                v_scenario.exit = true;
+                v_scenario.setError();
                 return;
 
             // in case of error
             default:
                 printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[start_index]);
                 printf("Try '%s --help' for more information.\n", cmd.c_str());
-                v_scenario.exit = true;
+                v_scenario.setError();
                 return;
         }
     }
@@ -168,6 +230,6 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
     if (optind < v_argc) {
         printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[optind]);
         printf("Try '%s --help' for more information.\n", cmd.c_str());
-        v_scenario.exit = true;
+        v_scenario.setError();
     }
 }

@@ -7,6 +7,9 @@
 //  readInput()
 #include <corsis/utils/input.h>
 
+// src/Main/Utils
+#include <corsis/utils/Scenario.h>
+
 #include <iostream>
 
 // corsika base namespace
@@ -31,13 +34,15 @@ int main(int argc, char* argv[]) {
     //      air density and composition fraction
     //      primary Z, A (or mass), and E (or particle type! e.g. gamma)
     //      primary direction theta, phi
-    Scenario scenario = {};
+
+    Scenario scenario;
     readInput(argc, argv, scenario);
-    if (scenario.exit) {
-        std::cout << "\nearly exit\n";
-        return 1;
+    if (scenario.error())
+        std::cout << "\nterminal error, exit\n";
+    else {
+        std::cout << "\nScenario:\n\n";
+        scenario.print();
     }
-    std::cout << "\nearly exit\n";
     return 0;
 
     // this is the CORSIKA 7 start of atmosphere/universe
