@@ -13,7 +13,8 @@ std::string getCmdName(char *v_cmd) {
 void showHelp(const std::string& v_cmd) {
     printf("\n");
     printf("Usage: %s [OPTION]...\n", v_cmd.c_str());
-    printf("Simulate extensive air showers\n");
+    printf("COsmic Ray SImulations for Smartphones (CORSIS)\n");
+    printf("using CORSIKA v8 (Milestone 2) as the backend\n");
     printf("\n");
     for (Help help_line : options_help)
         printf("%s\n", help_line.option.c_str());
@@ -21,8 +22,12 @@ void showHelp(const std::string& v_cmd) {
 
 void showVersion(const std::string& v_cmd) {
     printf("\n");
-    printf("%s version %s\n", v_cmd.c_str(), VERSION.c_str());
-    printf("2019 CRAYFIS Project.. or something\n");
+    printf("%s version %s, %s\n", v_cmd.c_str(), VERSION.c_str(), DATE.c_str());
+    printf("Extensive Air Shower Simulator for the CRAYFIS Project\n");
+    printf("University of California, Irvine\n");
+    printf("Department of Physics and Astronomy\n");
+    printf("Author: Eric Albin, Eric.K.Albin@gmail.com\n");
+    printf("Source code: https://github.com/ealbin/crayfis-corsika\n");
 }
 
 void showFormatErr(const std::string& v_cmd, char *v_arg) {
@@ -62,10 +67,18 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // nucleons
             case 'A':
-                if (v_scenario.setNucleons(optarg)) {
+                switch (v_scenario.setNucleons(optarg)) {
+                case 1:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case 2:
+                    printf("%s: options '-A and -M' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
@@ -116,19 +129,35 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // mass
             case 'M':
-                if (v_scenario.setMass(optarg)) {
-                    showFormatErr(cmd, v_argv[start_index]);
-                    v_scenario.setError();
-                    return;
-                }
+                 switch (v_scenario.setMass(optarg)) {
+                 case 1:
+                     showFormatErr(cmd, v_argv[start_index]);
+                     v_scenario.setError();
+                     return;
+                 case 2:
+                     printf("%s: options '-A and -M' cannot both be set\n", cmd.c_str());
+                     printf("Try '%s --help' for more information.\n", cmd.c_str());
+                     v_scenario.setError();
+                     return;
+                 default:
+                     break;
+                 }
                 break;
 
             // nitrogen
             case 'n':
-                if (v_scenario.setNitrogen(optarg)) {
+                switch (v_scenario.setNitrogen(optarg)) {
+                case 1:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case 2:
+                    printf("%s: options '-n and -x' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
@@ -152,10 +181,18 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // pythia
             case 'P':
-                if (v_scenario.setPythia()) {
+                switch (v_scenario.setPythia()) {
+                case 1:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case 2:
+                    printf("%s: options '-P and -S' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
@@ -166,10 +203,18 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // sibyll
             case 'S':
-                if (v_scenario.setSibyll()) {
+                switch (v_scenario.setSibyll()) {
+                case 1:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case 2:
+                    printf("%s: options '-P and -S' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
@@ -184,10 +229,18 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // oxygen
             case 'x':
-                if (v_scenario.setOxygen(optarg)) {
+                switch (v_scenario.setOxygen(optarg)) {
+                case 1:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case 2:
+                    printf("%s: options '-n and -x' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
@@ -229,6 +282,12 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
     if (optind < v_argc) {
         printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[optind]);
+        printf("Try '%s --help' for more information.\n", cmd.c_str());
+        v_scenario.setError();
+    }
+
+    if (!v_scenario.isValid()) {
+        printf("%s: at minimum, options '-Z and -E' must be set\n", cmd.c_str());
         printf("Try '%s --help' for more information.\n", cmd.c_str());
         v_scenario.setError();
     }

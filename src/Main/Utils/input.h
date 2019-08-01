@@ -8,6 +8,7 @@
 #include <stdio.h>  /* for printf */
 
 const std::string VERSION = "1.0.0";
+const std::string DATE = "Aug 2019";
 
 /*
  * TODO: documentation

@@ -2,10 +2,17 @@
 #ifndef _include_corsis_utils_Scenario_h_
 #define _include_corsis_utils_Scenario_h_
 
-#include <corsika/units/PhysicalUnits.h> /* HEP (eV) unit types */
-#include <corsika/geometry/Vector.h> /* MomentumVector */
+#include <phys/units/io.hpp> /* to_string */
 #include <phys/units/quantity.hpp> /* SI literals, units and prefix constants */
 
+#include <corsika/particles/ParticleProperties.h> /* GetNucleusMass */
+#include <corsika/geometry/Vector.h> /* MomentumVector */
+#include <corsika/units/PhysicalUnits.h> /* HEP (eV) unit types */
+
+#include <ctype.h> /* isalpha */
+#include <math.h> /* acos, nan */
+
+#include <iostream>
 #include <string>
 
 using namespace corsika;
@@ -13,8 +20,19 @@ using namespace phys::units::literals;
 
 typedef geometry::Vector<units::si::hepmomentum_d> MomentumVector;
 
+const double PI = acos(-1.);
+
 class Scenario {
 private:
+    bool f_nucleons_set;
+    bool f_mass_set;
+    bool f_energy_set;
+    bool f_nitrogen_set;
+    bool f_oxygen_set;
+    bool f_pythia_set;
+    bool f_sibyll_set;
+    bool f_protons_set;
+
     int f_nucleons;
     units::si::HEPEnergyType f_cut;
     units::si::MassDensityType f_density;
@@ -34,10 +52,12 @@ private:
     bool f_error;
 
     double getScale(const std::string& v_str);
+    units::si::HEPMassType getHEPMass();
 
 public:
     Scenario();
 
+    bool isValid();
     units::si::HEPEnergyType getCut();
     units::si::MassDensityType getDensity();
     units::si::HEPEnergyType getEnergy();

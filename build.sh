@@ -5,6 +5,6 @@
 cd ./build
 
 cmake ../src -DCMAKE_INSTALL_PREFIX=../install && \
-make -j8 && \
+make -j$(grep -c ^processor /proc/cpuinfo) && \
 make install && \
 echo "Built and Installed Successfully!"

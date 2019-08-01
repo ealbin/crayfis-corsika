@@ -1,53 +1,68 @@
 
 #include <corsis/utils/Scenario.h>
-#include <math.h> /* acos, nan */
-#include <iostream>
-
-const double PI = acos(-1.);
 
 Scenario::Scenario() {
+    f_nucleons_set = false;
+    f_mass_set     = false;
+    f_energy_set   = false;
+    f_nitrogen_set = false;
+    f_oxygen_set   = false;
+    f_pythia_set   = false;
+    f_sibyll_set   = false;
+    f_protons_set  = false;
+
+    // defaults
     f_nucleons = 0;
-    f_cut = 100_GeV;
-    f_density = 1_kg / (1_m * 1_m * 1_m);
-    f_energy = 0_eV;
-    f_height = 112.8_km; // CORSIKA 7 default
-    f_impact = 0_m;
-    f_mass = 0_GeV;
-    f_oxygen = 0.20946;
+    f_cut      = 100_GeV;
+    f_density  = 1_kg / (1_m * 1_m * 1_m);
+    f_energy   = 0_eV;
+    f_height   = 112.8_km; // CORSIKA 7 default
+    f_impact   = 0_m;
+    f_mass     = 0_GeV;
+    f_oxygen   = 0.20946;
     f_nitrogen = 1.f - f_oxygen;
-    f_output = "corsis_output.dat";
-    f_phi = 0.; // degrees
-    f_pythia = false;
-    //f_seed = ;
-    f_sibyll = true;
-    f_theta = 0.; // degrees
-    f_protons = 0;
-    f_error = false;
+    f_output   = "corsis_output.dat";
+    f_phi      = 0.; // degrees
+    f_pythia   = false;
+    //f_seed   = ;  // TODO
+    f_sibyll   = true;
+    f_theta    = 0.; // degrees
+    f_protons  = 0;
+    f_error    = false;
 }
 
-units::si::HEPEnergyType Scenario::getCut() { return f_cut; }
-units::si::MassDensityType Scenario::getDensity() { return f_density; }
-units::si::HEPEnergyType Scenario::getEnergy() { return f_energy; }
-units::si::LengthType Scenario::getHeight() { return f_height; }
-units::si::LengthType Scenario::getImpact() { return f_impact; }
-units::si::HEPMassType Scenario::getMass() { return f_mass; }
-float Scenario::getNitrogen() { return f_nitrogen; }
-std::string Scenario::getOutput() { return f_output; }
-double Scenario::getPhi() { return f_phi; }
-bool Scenario::usingPythia() { return f_pythia; }
-//uint64_t getSeed();
-bool Scenario::usingSibyll() { return f_sibyll; }
-double Scenario::getTheta() { return f_theta; }
-float Scenario::getOxygen() { return f_oxygen; }
-int Scenario::getProtons() { return f_protons; }
-bool Scenario::error() { return f_error; }
+bool Scenario::isValid() {
+    return f_energy_set && f_protons_set;
+}
+
+units::si::HEPEnergyType   Scenario::getCut()      { return f_cut; }
+units::si::MassDensityType Scenario::getDensity()  { return f_density; }
+units::si::HEPEnergyType   Scenario::getEnergy()   { return f_energy; }
+units::si::LengthType      Scenario::getHeight()   { return f_height; }
+units::si::LengthType      Scenario::getImpact()   { return f_impact; }
+units::si::HEPMassType     Scenario::getMass()     { return f_mass; }
+float                      Scenario::getNitrogen() { return f_nitrogen; }
+std::string                Scenario::getOutput()   { return f_output; }
+double                     Scenario::getPhi()      { return f_phi; }
+bool                       Scenario::usingPythia() { return f_pythia; }
+//uint64_t                 Scenario::getSeed(); // TODO
+bool                       Scenario::usingSibyll() { return f_sibyll; }
+double                     Scenario::getTheta()    { return f_theta; }
+float                      Scenario::getOxygen()   { return f_oxygen; }
+int                        Scenario::getProtons()  { return f_protons; }
+bool                       Scenario::error()       { return f_error; }
 
 MomentumVector Scenario::getMomentum(const geometry::CoordinateSystem& v_coordsys) {
+    if (!f_energy_set || !f_mass_set) {
+        std::cout << "*** energy and/or mass is unset, cannot getMomentum() ***\n";
+        throw std::exception {};
+    }
+
     units::si::HEPMomentumType momentum_mag =
             sqrt( f_energy*f_energy - f_mass*f_mass );
 
-    double theta = PI / 180. * f_theta;
-    double phi   = PI / 180. * f_phi;
+    double theta = PI / 180. * f_theta; // radians
+    double phi   = PI / 180. * f_phi;   // radians
     auto px = momentum_mag * sin(theta) * cos(phi);
     auto py = momentum_mag * sin(theta) * sin(phi);
     auto pz = momentum_mag * cos(theta) * -1.; // downward
@@ -86,6 +101,7 @@ double Scenario::getScale(const std::string& v_str) {
             return (double) units::si::kilo;
         case 'h':
             return (double) units::si::hecto;
+///        "da" has to be handled special, above
 ///        case "da":
 ///            return (double) units::si::deka;
         case 'd':
@@ -113,9 +129,26 @@ double Scenario::getScale(const std::string& v_str) {
     return nan(""); // silence compiler warning
 }
 
+units::si::HEPMassType Scenario::getHEPMass() {
+    if (!f_nucleons_set || !f_protons_set) {
+        std::cout << "*** atomic number and/or atomic mass is unset, cannot getHEPMass() ***\n";
+        throw std::exception {};
+    }
+    // TODO: this isn't a good model
+    return particles::GetNucleusMass(f_nucleons, f_protons);
+}
+
 int Scenario::setNucleons(const char* v_nucleons) {
     try {
+        if (f_mass_set)
+            return 2;
         f_nucleons = std::stoi(std::string(v_nucleons));
+        f_nucleons_set = true;
+
+        if (f_protons_set) {
+            f_mass = getHEPMass();
+            f_mass_set = true;
+        }
     }
     catch (...) {
         return 1;
@@ -130,6 +163,8 @@ int Scenario::setCut(const char* v_cut) {
 
         std::size_t unit_start = cut.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(cut.back()) && cut.back() != '.')
+                return 1;
             f_cut = value * 1_eV;
             return 0;
         }
@@ -154,6 +189,8 @@ int Scenario::setDensity(const char* v_density) {
 
         std::size_t unit_start = density.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(density.back()) && density.back() != '.')
+                return 1;
             f_density = value * 1_kg / (1_m * 1_m * 1_m);
             return 0;
         }
@@ -173,7 +210,10 @@ int Scenario::setEnergy(const char* v_energy) {
 
         std::size_t unit_start = energy.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(energy.back()) && energy.back() != '.')
+                return 1;
             f_energy = value * 1_eV;
+            f_energy_set = true;
             return 0;
         }
 
@@ -183,6 +223,7 @@ int Scenario::setEnergy(const char* v_energy) {
             len = prefix_start - unit_start - 1;
 
         f_energy = value * getScale(energy.substr(unit_start + 1, len)) * 1_eV;
+        f_energy_set = true;
     }
     catch (...) {
         return 1;
@@ -197,6 +238,8 @@ int Scenario::setHeight(const char* v_height) {
 
         std::size_t unit_start = height.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(height.back()) && height.back() != '.')
+                return 1;
             f_height = value * 1_m;
             return 0;
         }
@@ -221,6 +264,8 @@ int Scenario::setImpact(const char* v_impact) {
 
         std::size_t unit_start = impact.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(impact.back()) && impact.back() != '.')
+                return 1;
             f_impact = value * 1_m;
             return 0;
         }
@@ -240,6 +285,8 @@ int Scenario::setImpact(const char* v_impact) {
 
 int Scenario::setMass(const char* v_mass) {
     try {
+        if (f_nucleons_set)
+            return 2;
         f_mass = std::stod(std::string(v_mass)) * 1_GeV;
 
         std::string mass(v_mass);
@@ -247,7 +294,10 @@ int Scenario::setMass(const char* v_mass) {
 
         std::size_t unit_start = mass.find_first_of('_');
         if (unit_start == std::string::npos) {
+            if (!isdigit(mass.back()) && mass.back() != '.')
+                return 1;
             f_mass = value * 1_eV;
+            f_mass_set = true;
             return 0;
         }
 
@@ -257,6 +307,7 @@ int Scenario::setMass(const char* v_mass) {
             len = prefix_start - unit_start - 1;
 
         f_mass = value * getScale(mass.substr(unit_start + 1, len)) * 1_eV;
+        f_mass_set = true;
     }
     catch (...) {
         return 1;
@@ -266,7 +317,10 @@ int Scenario::setMass(const char* v_mass) {
 
 int Scenario::setNitrogen(const char* v_nitrogen) {
     try {
+        if (f_oxygen_set)
+            return 2;
         f_nitrogen = std::stof(std::string(v_nitrogen));
+        f_nitrogen_set = true;
     }
     catch (...) {
         return 1;
@@ -290,14 +344,22 @@ int Scenario::setPhi(const char* v_phi) {
 }
 
 int Scenario::setPythia() {
+    if (f_sibyll_set)
+        return 2;
     f_pythia = true;
+    f_pythia_set = true;
+    f_sibyll = false;
     return 0;
 }
 
-//int setSeed(const char* v_seed);
+//int setSeed(const char* v_seed); // TODO
 
 int Scenario::setSibyll() {
+    if (f_pythia_set)
+        return 2;
     f_sibyll = true;
+    f_sibyll_set = true;
+    f_pythia = false;
     return 0;
 }
 
@@ -313,7 +375,10 @@ int Scenario::setTheta(const char* v_theta) {
 
 int Scenario::setOxygen(const char* v_oxygen) {
     try {
+        if (f_nitrogen_set)
+            return 2;
         f_oxygen = std::stof(std::string(v_oxygen));
+        f_oxygen_set = true;
     }
     catch (...) {
         return 1;
@@ -324,6 +389,12 @@ int Scenario::setOxygen(const char* v_oxygen) {
 int Scenario::setProtons(const char* v_protons) {
     try {
         f_protons = std::stoi(std::string(v_protons));
+        f_protons_set = true;
+
+        if (f_nucleons_set) {
+            f_mass = getHEPMass();
+            f_mass_set = true;
+        }
     }
     catch (...) {
         return 1;
@@ -336,19 +407,26 @@ void Scenario::setError() {
 }
 
 void Scenario::print() {
-    std::cout << "Primary Nucleons: " << f_nucleons << std::endl;
-    std::cout << "Cut Energy:       " << f_cut      << std::endl;
-    std::cout << "Atm. Density:     " << f_density  << std::endl;
-    std::cout << "Primary Energy:   " << f_energy   << std::endl;
-    std::cout << "Atm. Height:      " << f_height   << std::endl;
-    std::cout << "Impact Height:    " << f_impact   << std::endl;
-    std::cout << "Primary Mass:     " << f_mass     << std::endl;
-    std::cout << "Nitrogen Frac:    " << f_nitrogen << std::endl;
-    std::cout << "Output file:      " << f_output   << std::endl;
-    std::cout << "Phi:              " << f_phi      << " deg" << std::endl;
-    std::cout << "Pythia?           " << f_pythia   << std::endl;
-    std::cout << "Sibyll?           " << f_sibyll   << std::endl;
-    std::cout << "Theta:            " << f_theta    << " deg" << std::endl;
-    std::cout << "Oxygen Frac:      " << f_oxygen   << std::endl;
-    std::cout << "Primary Protons:  " << f_protons  << std::endl;
+    const int digits = 5;
+    std::cout << "Primary Particle  " << std::endl;
+    std::cout << "   Energy:        " << phys::units::io::eng::to_string(f_energy, digits) << std::endl;
+    std::cout << "   Protons:       " << f_protons  << std::endl;
+    std::cout << "   Nucleons:      " << (f_nucleons_set ? std::to_string(f_nucleons) : "unspecified") << std::endl;
+    std::cout << "   Mass:          " << phys::units::io::eng::to_string(f_mass, digits) << std::endl;
+    std::cout << "   Theta:         " << f_theta    << " deg" << std::endl;
+    std::cout << "   Phi:           " << f_phi      << " deg" << std::endl;
+    std::cout << std::endl;
+    std::cout << "Simulation        " << std::endl;
+    std::cout << "   Cut Energy:    " << phys::units::io::eng::to_string(f_cut, digits) << std::endl;
+    std::cout << "   Impact Height: " << phys::units::io::eng::to_string(f_impact, digits) << std::endl;
+    std::cout << "   Using Pythia:  " << (f_pythia ? "yes" : "no") << std::endl;
+    std::cout << "   Using Sibyll:  " << (f_sibyll ? "yes" : "no") << std::endl;
+    //std::cout << "Random Seed:      " << f_seed     << std::endl;
+    std::cout << "   Output file:   " << f_output   << std::endl;
+    std::cout << std::endl;
+    std::cout << "Atmosphere Model  " << std::endl;
+    std::cout << "   Height:        " << phys::units::io::eng::to_string(f_height, digits) << std::endl;
+    std::cout << "   Density:       " << f_density  << std::endl;
+    std::cout << "   Nitrogen Frac: " << f_nitrogen << std::endl;
+    std::cout << "   Oxygen Frac:   " << f_oxygen   << std::endl;
 }
