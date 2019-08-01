@@ -3,11 +3,18 @@
 
 Scenario::Scenario() {
     f_nucleons_set = false;
+    f_cut_set      = false;
+    f_density_set  = false;
     f_mass_set     = false;
     f_energy_set   = false;
+    f_height_set   = false;
+    f_impact_set   = false;
     f_nitrogen_set = false;
     f_oxygen_set   = false;
+    f_output_set   = false;
+    f_phi_set      = false;
     f_pythia_set   = false;
+    f_theta_set    = false;
     f_sibyll_set   = false;
     f_protons_set  = false;
 
@@ -140,8 +147,10 @@ units::si::HEPMassType Scenario::getHEPMass() {
 
 int Scenario::setNucleons(const char* v_nucleons) {
     try {
+        if (f_nucleons_set)
+            return err::REPEAT_ERR;
         if (f_mass_set)
-            return 2;
+            return err::INCOMPAT_ERR;
         f_nucleons = std::stoi(std::string(v_nucleons));
         f_nucleons_set = true;
 
@@ -151,22 +160,25 @@ int Scenario::setNucleons(const char* v_nucleons) {
         }
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setCut(const char* v_cut) {
     try {
+        if (f_cut_set)
+            return err::REPEAT_ERR;
+
         std::string cut(v_cut);
         double value = std::stod(cut);
 
         std::size_t unit_start = cut.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(cut.back()) && cut.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_cut = value * 1_eV;
-            return 0;
+            return err::NO_ERR;
         }
 
         std::size_t prefix_start = cut.find("eV");
@@ -177,44 +189,50 @@ int Scenario::setCut(const char* v_cut) {
         f_cut = value * getScale(cut.substr(unit_start + 1, len)) * 1_eV;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setDensity(const char* v_density) {
     try {
+        if (f_density_set)
+            return err::REPEAT_ERR;
+
         std::string density(v_density);
         double value = std::stod(density);
 
         std::size_t unit_start = density.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(density.back()) && density.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_density = value * 1_kg / (1_m * 1_m * 1_m);
-            return 0;
+            return err::NO_ERR;
         }
 
         f_density = value * getScale(density.substr(unit_start + 1)) * 1_kg / (1_m * 1_m * 1_m);
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setEnergy(const char* v_energy) {
     try {
+        if (f_energy_set)
+            return err::REPEAT_ERR;
+
         std::string energy(v_energy);
         double value = std::stod(energy);
 
         std::size_t unit_start = energy.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(energy.back()) && energy.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_energy = value * 1_eV;
             f_energy_set = true;
-            return 0;
+            return err::NO_ERR;
         }
 
         std::size_t prefix_start = energy.find("eV");
@@ -226,22 +244,25 @@ int Scenario::setEnergy(const char* v_energy) {
         f_energy_set = true;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setHeight(const char* v_height) {
     try {
+        if (f_height_set)
+            return err::REPEAT_ERR;
+
         std::string height(v_height);
         double value = std::stod(height);
 
         std::size_t unit_start = height.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(height.back()) && height.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_height = value * 1_m;
-            return 0;
+            return err::NO_ERR;
         }
 
         std::size_t prefix_start = height.find_last_of('m');
@@ -252,22 +273,25 @@ int Scenario::setHeight(const char* v_height) {
         f_height = value * getScale(height.substr(unit_start + 1, len)) * 1_m;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setImpact(const char* v_impact) {
     try {
+        if (f_impact_set)
+            return err::REPEAT_ERR;
+
         std::string impact(v_impact);
         double value = std::stod(impact);
 
         std::size_t unit_start = impact.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(impact.back()) && impact.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_impact = value * 1_m;
-            return 0;
+            return err::NO_ERR;
         }
 
         std::size_t prefix_start = impact.find_last_of('m');
@@ -278,15 +302,18 @@ int Scenario::setImpact(const char* v_impact) {
         f_impact = value * getScale(impact.substr(unit_start + 1, len)) * 1_m;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setMass(const char* v_mass) {
     try {
+        if (f_mass_set)
+            return err::REPEAT_ERR;
         if (f_nucleons_set)
-            return 2;
+            return err::INCOMPAT_ERR;
+
         f_mass = std::stod(std::string(v_mass)) * 1_GeV;
 
         std::string mass(v_mass);
@@ -295,10 +322,10 @@ int Scenario::setMass(const char* v_mass) {
         std::size_t unit_start = mass.find_first_of('_');
         if (unit_start == std::string::npos) {
             if (!isdigit(mass.back()) && mass.back() != '.')
-                return 1;
+                return err::FORMAT_ERR;
             f_mass = value * 1_eV;
             f_mass_set = true;
-            return 0;
+            return err::NO_ERR;
         }
 
         std::size_t prefix_start = mass.find("eV");
@@ -310,84 +337,106 @@ int Scenario::setMass(const char* v_mass) {
         f_mass_set = true;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setNitrogen(const char* v_nitrogen) {
     try {
+        if (f_nitrogen_set)
+            return err::REPEAT_ERR;
         if (f_oxygen_set)
-            return 2;
+            return err::INCOMPAT_ERR;
+
         f_nitrogen = std::stof(std::string(v_nitrogen));
         f_nitrogen_set = true;
+        f_oxygen = 1. - f_nitrogen;
+        f_oxygen_set = true;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setOutput(const char* v_output) {
+    if (f_output_set)
+        return err::REPEAT_ERR;
     f_output = std::string(v_output);
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setPhi(const char* v_phi) {
     try {
+        if (f_phi_set)
+            return err::REPEAT_ERR;
         f_phi = std::stod(std::string(v_phi));
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setPythia() {
+    if (f_pythia_set)
+        return err::REPEAT_ERR;
     if (f_sibyll_set)
-        return 2;
+        return err::INCOMPAT_ERR;
     f_pythia = true;
     f_pythia_set = true;
     f_sibyll = false;
-    return 0;
+    return err::NO_ERR;
 }
 
 //int setSeed(const char* v_seed); // TODO
 
 int Scenario::setSibyll() {
+    if (f_sibyll_set)
+        return err::REPEAT_ERR;
     if (f_pythia_set)
-        return 2;
+        return err::INCOMPAT_ERR;
     f_sibyll = true;
     f_sibyll_set = true;
     f_pythia = false;
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setTheta(const char* v_theta) {
     try {
+        if (f_theta_set)
+            return err::REPEAT_ERR;
         f_theta = std::stod(std::string(v_theta));
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setOxygen(const char* v_oxygen) {
     try {
+        if (f_oxygen_set)
+            return err::REPEAT_ERR;
         if (f_nitrogen_set)
-            return 2;
+            return err::INCOMPAT_ERR;
         f_oxygen = std::stof(std::string(v_oxygen));
         f_oxygen_set = true;
+        f_nitrogen = 1. - f_oxygen;
+        f_nitrogen_set = true;
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 int Scenario::setProtons(const char* v_protons) {
     try {
+        if (f_protons_set)
+            return err::REPEAT_ERR;
+
         f_protons = std::stoi(std::string(v_protons));
         f_protons_set = true;
 
@@ -397,9 +446,9 @@ int Scenario::setProtons(const char* v_protons) {
         }
     }
     catch (...) {
-        return 1;
+        return err::FORMAT_ERR;
     }
-    return 0;
+    return err::NO_ERR;
 }
 
 void Scenario::setError() {

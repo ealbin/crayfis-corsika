@@ -20,17 +20,31 @@ using namespace phys::units::literals;
 
 typedef geometry::Vector<units::si::hepmomentum_d> MomentumVector;
 
-const double PI = acos(-1.);
+constexpr double PI = acos(-1.);
+
+namespace err {
+    constexpr int NO_ERR = 0;
+    constexpr int FORMAT_ERR = 1;
+    constexpr int REPEAT_ERR = 2;
+    constexpr int INCOMPAT_ERR = 3;
+} // namespace err
 
 class Scenario {
 private:
     bool f_nucleons_set;
+    bool f_cut_set;
+    bool f_density_set;
     bool f_mass_set;
     bool f_energy_set;
+    bool f_height_set;
+    bool f_impact_set;
     bool f_nitrogen_set;
     bool f_oxygen_set;
+    bool f_output_set;
+    bool f_phi_set;
     bool f_pythia_set;
     bool f_sibyll_set;
+    bool f_theta_set;
     bool f_protons_set;
 
     int f_nucleons;

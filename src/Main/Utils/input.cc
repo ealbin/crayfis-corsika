@@ -35,6 +35,11 @@ void showFormatErr(const std::string& v_cmd, char *v_arg) {
     printf("Try '%s --help' for more information.\n", v_cmd.c_str());
 }
 
+void showRepeatErr(const std::string& v_cmd, char *v_arg) {
+    printf("%s: option '%s' is set more than once\n", v_cmd.c_str(), v_arg);
+    printf("Try '%s --help' for more information.\n", v_cmd.c_str());
+}
+
 void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
     const std::string& cmd = getCmdName(v_argv[0]);
@@ -68,11 +73,15 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
             // nucleons
             case 'A':
                 switch (v_scenario.setNucleons(optarg)) {
-                case 1:
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
-                case 2:
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
                     printf("%s: options '-A and -M' cannot both be set\n", cmd.c_str());
                     printf("Try '%s --help' for more information.\n", cmd.c_str());
                     v_scenario.setError();
@@ -84,74 +93,117 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // cut
             case 'c':
-                if (v_scenario.setCut(optarg)) {
+                switch (v_scenario.setCut(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // density
             case 'd':
-                if (v_scenario.setDensity(optarg)) {
+                switch (v_scenario.setDensity(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // energy
             case 'E':
-                if (v_scenario.setEnergy(optarg)) {
+                switch (v_scenario.setEnergy(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // height
             case 'H':
-                if (v_scenario.setHeight(optarg)) {
+                switch (v_scenario.setHeight(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // impact
             case 'i':
-                if (v_scenario.setImpact(optarg)) {
+                switch (v_scenario.setImpact(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // mass
             case 'M':
-                 switch (v_scenario.setMass(optarg)) {
-                 case 1:
-                     showFormatErr(cmd, v_argv[start_index]);
-                     v_scenario.setError();
-                     return;
-                 case 2:
-                     printf("%s: options '-A and -M' cannot both be set\n", cmd.c_str());
-                     printf("Try '%s --help' for more information.\n", cmd.c_str());
-                     v_scenario.setError();
-                     return;
-                 default:
-                     break;
-                 }
+                switch (v_scenario.setMass(optarg)) {
+                case err::FORMAT_ERR:
+                    showFormatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
+                    printf("%s: options '-A and -M' cannot both be set\n", cmd.c_str());
+                    printf("Try '%s --help' for more information.\n", cmd.c_str());
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
+                }
                 break;
 
             // nitrogen
             case 'n':
                 switch (v_scenario.setNitrogen(optarg)) {
-                case 1:
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
-                case 2:
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
                     printf("%s: options '-n and -x' cannot both be set\n", cmd.c_str());
                     printf("Try '%s --help' for more information.\n", cmd.c_str());
                     v_scenario.setError();
@@ -163,30 +215,48 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // output
             case 'o':
-                if (v_scenario.setOutput(optarg)) {
+                switch (v_scenario.setOutput(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // phi
             case 'p':
-                if (v_scenario.setPhi(optarg)) {
+                switch (v_scenario.setPhi(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // pythia
             case 'P':
                 switch (v_scenario.setPythia()) {
-                case 1:
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
-                case 2:
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
                     printf("%s: options '-P and -S' cannot both be set\n", cmd.c_str());
                     printf("Try '%s --help' for more information.\n", cmd.c_str());
                     v_scenario.setError();
@@ -204,11 +274,15 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
             // sibyll
             case 'S':
                 switch (v_scenario.setSibyll()) {
-                case 1:
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
-                case 2:
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
                     printf("%s: options '-P and -S' cannot both be set\n", cmd.c_str());
                     printf("Try '%s --help' for more information.\n", cmd.c_str());
                     v_scenario.setError();
@@ -220,21 +294,32 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // theta
             case 't':
-                if (v_scenario.setTheta(optarg)) {
+                switch (v_scenario.setTheta(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 
             // oxygen
             case 'x':
-                switch (v_scenario.setOxygen(optarg)) {
-                case 1:
+                switch (v_scenario.setPhi(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
-                case 2:
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                case err::INCOMPAT_ERR:
                     printf("%s: options '-n and -x' cannot both be set\n", cmd.c_str());
                     printf("Try '%s --help' for more information.\n", cmd.c_str());
                     v_scenario.setError();
@@ -246,10 +331,17 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
 
             // protons
             case 'Z':
-                if (v_scenario.setProtons(optarg)) {
+                switch (v_scenario.setProtons(optarg)) {
+                case err::FORMAT_ERR:
                     showFormatErr(cmd, v_argv[start_index]);
                     v_scenario.setError();
                     return;
+                case err::REPEAT_ERR:
+                    showRepeatErr(cmd, v_argv[start_index]);
+                    v_scenario.setError();
+                    return;
+                default:
+                    break;
                 }
                 break;
 

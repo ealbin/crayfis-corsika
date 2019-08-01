@@ -26,36 +26,14 @@ int main(int argc, char* argv[]) {
     // operation, as for (0/0) or (infinity - infinity) or sqrt(-1).
     feenableexcept(FE_INVALID);
 
-    // TODO: have readInput somehow affect variables
-    // Candidates:
-    //      height_atmosphere: double (km)
-    //      start altitude(?)
-    //      random seed: uint64_t
-    //      air density and composition fraction
-    //      primary Z, A (or mass), and E (or particle type! e.g. gamma)
-    //      primary direction theta, phi
-
     Scenario scenario;
     readInput(argc, argv, scenario);
     if (scenario.error())
-        std::cout << "\nterminal error, exit\n";
-    else {
-        std::cout << "\nScenario:\n\n";
-        scenario.print();
-    }
+        return 1;
+
+    std::cout << "\nSetup:\n\n";
+    scenario.print();
     return 0;
-
-    // this is the CORSIKA 7 start of atmosphere/universe
-    const units::si::LengthType height_atmosphere = 112.8_km;
-
-    // fraction of atmospheric oxygen (does it need to be a float?)
-    const float oxygen_frac = 0.20946;
-
-    // Direction of primary [radians]
-    // TODO: does units::si have radians/deg?
-    // fyi, could do angle / 180. * M_PI <-- where is M_PI defined?
-    const double theta = 0.;
-    const double phi = 0.;
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -101,10 +79,10 @@ int main(int argc, char* argv[]) {
     // TODO: make inhomogenious??  Where is the Code:: enum explicitly done??
     auto const model_props = base_atmosphere->SetModelProperties<
             environment::HomogeneousMedium<setup::IEnvironmentModel>>(
-            1_kg / (1_m * 1_m * 1_m), // air density, 1kg/m^3
+            scenario.getDensity(), // air density, 1kg/m^3
             environment::NuclearComposition(
             std::vector<particles::Code>{particles::Code::Nitrogen, particles::Code::Oxygen},
-            std::vector<float>{1.f - oxygen_frac, oxygen_frac}));
+            std::vector<float>{scenario.getNitrogen(), scenario.getOxygen()}));
 
     ground_atmosphere->SetModelProperties(model_props);
     base_atmosphere->AddChild(std::move(ground_atmosphere));
@@ -114,7 +92,7 @@ int main(int argc, char* argv[]) {
     // I'm starting to think 0,0,0 is not the center of the Earth, it's
     // ground zero...
     // this is the CORSIKA 7 start of atmosphere/universe
-    geometry::Point start_altitude(coord_sys, 0_m, 0_m, height_atmosphere);
+    geometry::Point start_altitude(coord_sys, 0_m, 0_m, scenario.getHeight());
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -125,14 +103,10 @@ int main(int argc, char* argv[]) {
     units::si::HEPMassType mass = particles::GetNucleusMass(nucleus_A, nucleus_Z);
     units::si::HEPEnergyType energy = nucleus_A * 1_TeV;
 
-    units::si::HEPMomentumType momentum_mag = sqrt( energy*energy - mass*mass );
-    auto const px = momentum_mag * sin(theta) * cos(phi);
-    auto const py = momentum_mag * sin(theta) * sin(phi);
-    auto const pz = momentum_mag * cos(theta) * -1.; // downward
-    auto momentum = stack::MomentumVector(coord_sys, {px, py, pz});
+    auto momentum = scenario.getMomentum(coord_sys);
 
     std::cout << "input particle: " << primary << std::endl;
-    std::cout << "input angles: theta=" << theta << " phi=" << phi << std::endl;
+    std::cout << "input angles: theta=" << scenario.getTheta() << " phi=" << scenario.getPhi() << std::endl;
     std::cout << "input momentum: " << momentum.GetComponents() / 1_GeV << " GeV" << std::endl;
 
     ////////////////////////////////////////////////////////////////////////////
