@@ -151,6 +151,7 @@ int Scenario::setNucleons(const char* v_nucleons) {
             return err::REPEAT_ERR;
         if (f_mass_set)
             return err::INCOMPAT_ERR;
+
         f_nucleons = std::stoi(std::string(v_nucleons));
         f_nucleons_set = true;
 
@@ -187,6 +188,7 @@ int Scenario::setCut(const char* v_cut) {
             len = prefix_start - unit_start - 1;
 
         f_cut = value * getScale(cut.substr(unit_start + 1, len)) * 1_eV;
+        f_cut_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -207,10 +209,12 @@ int Scenario::setDensity(const char* v_density) {
             if (!isdigit(density.back()) && density.back() != '.')
                 return err::FORMAT_ERR;
             f_density = value * 1_kg / (1_m * 1_m * 1_m);
+            f_density_set = true;
             return err::NO_ERR;
         }
 
         f_density = value * getScale(density.substr(unit_start + 1)) * 1_kg / (1_m * 1_m * 1_m);
+        f_density_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -262,6 +266,7 @@ int Scenario::setHeight(const char* v_height) {
             if (!isdigit(height.back()) && height.back() != '.')
                 return err::FORMAT_ERR;
             f_height = value * 1_m;
+            f_height_set = true;
             return err::NO_ERR;
         }
 
@@ -271,6 +276,7 @@ int Scenario::setHeight(const char* v_height) {
             len = prefix_start - unit_start - 1;
 
         f_height = value * getScale(height.substr(unit_start + 1, len)) * 1_m;
+        f_height_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -300,6 +306,7 @@ int Scenario::setImpact(const char* v_impact) {
             len = prefix_start - unit_start - 1;
 
         f_impact = value * getScale(impact.substr(unit_start + 1, len)) * 1_m;
+        f_impact_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -364,6 +371,7 @@ int Scenario::setOutput(const char* v_output) {
     if (f_output_set)
         return err::REPEAT_ERR;
     f_output = std::string(v_output);
+    f_output_set = true;
     return err::NO_ERR;
 }
 
@@ -372,6 +380,7 @@ int Scenario::setPhi(const char* v_phi) {
         if (f_phi_set)
             return err::REPEAT_ERR;
         f_phi = std::stod(std::string(v_phi));
+        f_phi_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -384,6 +393,7 @@ int Scenario::setPythia() {
         return err::REPEAT_ERR;
     if (f_sibyll_set)
         return err::INCOMPAT_ERR;
+
     f_pythia = true;
     f_pythia_set = true;
     f_sibyll = false;
@@ -397,6 +407,7 @@ int Scenario::setSibyll() {
         return err::REPEAT_ERR;
     if (f_pythia_set)
         return err::INCOMPAT_ERR;
+
     f_sibyll = true;
     f_sibyll_set = true;
     f_pythia = false;
@@ -408,6 +419,7 @@ int Scenario::setTheta(const char* v_theta) {
         if (f_theta_set)
             return err::REPEAT_ERR;
         f_theta = std::stod(std::string(v_theta));
+        f_theta_set = true;
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -421,6 +433,7 @@ int Scenario::setOxygen(const char* v_oxygen) {
             return err::REPEAT_ERR;
         if (f_nitrogen_set)
             return err::INCOMPAT_ERR;
+
         f_oxygen = std::stof(std::string(v_oxygen));
         f_oxygen_set = true;
         f_nitrogen = 1. - f_oxygen;

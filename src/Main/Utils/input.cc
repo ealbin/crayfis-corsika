@@ -376,11 +376,13 @@ void readInput(int v_argc, char *v_argv[], Scenario &v_scenario) {
         printf("%s: unrecognized option '%s'\n", cmd.c_str(), v_argv[optind]);
         printf("Try '%s --help' for more information.\n", cmd.c_str());
         v_scenario.setError();
+        return;
     }
 
     if (!v_scenario.isValid()) {
         printf("%s: at minimum, options '-Z and -E' must be set\n", cmd.c_str());
         printf("Try '%s --help' for more information.\n", cmd.c_str());
         v_scenario.setError();
+        return;
     }
 }
