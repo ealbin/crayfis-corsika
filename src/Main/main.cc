@@ -10,6 +10,10 @@
 // src/Main/Utils
 #include <corsis/utils/Scenario.h>
 
+//#include <execinfo.h> /* backtrace... */
+//#include <unistd.h> /* STDERR_FILENO */
+
+
 #include <iostream>
 
 // corsika base namespace
@@ -17,6 +21,23 @@ using namespace corsika;
 
 // namespace for literals, e.g. _km, _GeV, etc...
 using namespace phys::units::literals;
+
+/*
+void handler(int sig) {
+    const int history = 20;
+    void *array[history];
+    std::size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, history);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
+}
+*/
+
 
 int main(int argc, char* argv[]) {
 
@@ -33,13 +54,12 @@ int main(int argc, char* argv[]) {
 
     std::cout << "\nSetup:\n\n";
     scenario.print();
-    return 0;
 
     ////////////////////////////////////////////////////////////////////////////
 
-    // create a random number sequence named "corsis"
     // it's a Mersenne Twister (std::mt19937)
-    random::RNGManager::GetInstance().RegisterRandomStream("corsis");
+    // cascade has to be cascade for cascade.h
+    random::RNGManager::GetInstance().RegisterRandomStream("cascade");
     random::RNGManager::GetInstance().RegisterRandomStream("s_rndm");
     random::RNGManager::GetInstance().RegisterRandomStream("pythia");
 
@@ -51,7 +71,7 @@ int main(int argc, char* argv[]) {
     // although src/Environment/InhomogeniousMedium.h isn't used(?) maybe that's
     // for a custom medium... anyway, inhomogeneous as in the properties of the
     // atmosphere change with altitude
-    environment::Environment<setup::IEnvironmentModel> environment;
+    const environment::Environment<setup::IEnvironmentModel> environment;
 
     // TODO: no clue what the universe is
     // but environment.GetUniverse() returns a std::unique_ptr pointer
@@ -96,13 +116,7 @@ int main(int argc, char* argv[]) {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    // Helium with a silly model for Z(A)
     const particles::Code primary = particles::Code::Nucleus;
-    int nucleus_A = 4;
-    int nucleus_Z = int(nucleus_A / 2.15 + .7);
-    units::si::HEPMassType mass = particles::GetNucleusMass(nucleus_A, nucleus_Z);
-    units::si::HEPEnergyType energy = nucleus_A * 1_TeV;
-
     auto momentum = scenario.getMomentum(coord_sys);
 
     std::cout << "input particle: " << primary << std::endl;
@@ -111,43 +125,64 @@ int main(int argc, char* argv[]) {
 
     ////////////////////////////////////////////////////////////////////////////
 
+    std::cout << "\n\nHere we go:\n";
+
     // I guess the particle stack keeps track of created particles(?)
+    std::cout << "\n - Stack\n";
     setup::Stack stack;
     stack.Clear();
     stack.AddParticle(
         std::tuple<particles::Code, units::si::HEPEnergyType, stack::MomentumVector, geometry::Point,
         units::si::TimeType, unsigned short, unsigned short>{
-        primary, energy, momentum, start_altitude, 0_ns, nucleus_A, nucleus_Z});
+        particles::Code::Nucleus, scenario.getEnergy(), momentum, scenario.getImpact(coord_sys),
+                    0_ns, 4, 2});
 
+    std::cout << "\n - Tracking Line\n";
     // setup processes, decays and interactions
     process::tracking_line::TrackingLine tracking;
 
+    std::cout << "\n - Stack Inspector\n";
     // NO IDEA WHY THE FIRST TWO ARGUMENTS APPEAR TO ALWAYS BE 1 and TRUE
-    process::stack_inspector::StackInspector<setup::Stack> stack_inspector(1, true, energy);
+    process::stack_inspector::StackInspector<setup::Stack>
+            stack_inspector(1, true, scenario.getEnergy());
 
-    process::sibyll::Interaction sibyll;
-    //process::pythia::Interaction pythia; <-- from proton
-    process::sibyll::NuclearInteraction sibyllNuc(sibyll, environment);
-    process::sibyll::Decay decay;
+    if (scenario.usingSibyll()) {
+        std::cout << "\n - Sibyll\n";
+        process::sibyll::Interaction interaction;
+        process::sibyll::NuclearInteraction nuclear(interaction, environment);
+        process::sibyll::Decay decay;
 
-    // cascade with only HE model ==> HE cut
-    process::particle_cut::ParticleCut cut(80_GeV);
+        std::cout << "\n - Cut\n";
+        // cascade with only HE model ==> HE cut
+        process::particle_cut::ParticleCut cut(scenario.getCut());
 
-    process::energy_loss::EnergyLoss energy_loss;
+        std::cout << "\n - Energy Loss\n";
+        process::energy_loss::EnergyLoss energy_loss;
 
-    process::track_writer::TrackWriter trackWriter("deleteme.dat");
+        std::cout << "\n - TrackWriter\n";
+        process::track_writer::TrackWriter trackWriter(scenario.getOutput());
 
-    // assemble all processes into an ordered process list
-    auto sequence = stack_inspector << sibyll << sibyllNuc << decay << energy_loss << cut
-                                 << trackWriter;
+        std::cout << "\n - Load into stack inspector\n";
+        // assemble all processes into an ordered process list
+        auto sequence = stack_inspector << interaction << nuclear << decay
+                                        << energy_loss << cut << trackWriter;
 
-    ////////////////////////////////////////////////////////////////////////////
+        std::cout << "\n - Make Cascade\n";
+        // define air shower object, run simulation
+        cascade::Cascade EAS(environment, tracking, sequence, stack);
+        std::cout << "\n - EAS.Init()\n";
+        EAS.Init();
+        std::cout << "\n - EAS.Run()\n";
+        EAS.Run();
+    }
+    else {
+        //process::pythia::Interaction pythia; <-- from proton
+        std::cout << "Pythia stuff would go here\n";
+    }
 
+    return 0;
 
-    // define air shower object, run simulation
-    //cascade::Cascade EAS(environment, tracking, sequence, stack);
-    //EAS.Init();
-    //EAS.Run();
+    /*
 
     ////////////////////////////////////////////////////////////////////////////
 
@@ -165,5 +200,6 @@ int main(int argc, char* argv[]) {
          << "relative difference (%): " << (Efinal / energy - 1) * 100 << std::endl;
     std::cout << "total dEdX energy (GeV): " << energy_loss.GetTotal() / 1_GeV << std::endl
          << "relative difference (%): " << energy_loss.GetTotal() / energy * 100 << std::endl;
+    */
 }
 

@@ -6,6 +6,7 @@
 #include <phys/units/quantity.hpp> /* SI literals, units and prefix constants */
 
 #include <corsika/particles/ParticleProperties.h> /* GetNucleusMass */
+#include <corsika/geometry/Point.h> /* Point */
 #include <corsika/geometry/Vector.h> /* MomentumVector */
 #include <corsika/units/PhysicalUnits.h> /* HEP (eV) unit types */
 
@@ -13,6 +14,7 @@
 #include <math.h> /* acos, nan */
 
 #include <iostream>
+#include <limits> /* std::numeric_limits */
 #include <string>
 
 using namespace corsika;
@@ -47,7 +49,7 @@ private:
     bool f_theta_set;
     bool f_protons_set;
 
-    int f_nucleons;
+    unsigned short f_nucleons;
     units::si::HEPEnergyType f_cut;
     units::si::MassDensityType f_density;
     units::si::HEPEnergyType f_energy;
@@ -62,33 +64,35 @@ private:
     bool f_sibyll;
     double f_theta; // degrees
     float f_oxygen;
-    int f_protons;
+    unsigned short f_protons;
     bool f_error;
 
     double getScale(const std::string& v_str);
     units::si::HEPMassType getHEPMass();
+    unsigned short getHEPNucleons();
 
 public:
     Scenario();
 
     bool isValid();
-    units::si::HEPEnergyType getCut();
-    units::si::MassDensityType getDensity();
-    units::si::HEPEnergyType getEnergy();
-    units::si::LengthType getHeight();
-    units::si::LengthType getImpact();
-    units::si::HEPMassType getMass();
-    float getNitrogen();
-    std::string getOutput();
-    double getPhi();
-    bool usingPythia();
+    const unsigned short& getNucleons();
+    const units::si::HEPEnergyType& getCut();
+    const units::si::MassDensityType& getDensity();
+    const units::si::HEPEnergyType& getEnergy();
+    const units::si::LengthType& getHeight();
+    geometry::Point getImpact(const geometry::CoordinateSystem& v_coordsys);
+    const units::si::HEPMassType& getMass();
+    const float& getNitrogen();
+    const std::string& getOutput();
+    const double& getPhi();
+    const bool& usingPythia();
     //uint64_t getSeed();
-    bool usingSibyll();
-    double getTheta();
-    float getOxygen();
-    int getProtons();
+    const bool& usingSibyll();
+    const double& getTheta();
+    const float& getOxygen();
+    const unsigned short& getProtons();
     MomentumVector getMomentum(const geometry::CoordinateSystem& v_coordsys);
-    bool error();
+    const bool& error();
 
     void print();
 

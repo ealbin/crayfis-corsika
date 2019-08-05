@@ -24,7 +24,7 @@ Scenario::Scenario() {
     f_density  = 1_kg / (1_m * 1_m * 1_m);
     f_energy   = 0_eV;
     f_height   = 112.8_km; // CORSIKA 7 default
-    f_impact   = 0_m;
+    f_impact   = f_height;
     f_mass     = 0_GeV;
     f_oxygen   = 0.20946;
     f_nitrogen = 1.f - f_oxygen;
@@ -42,22 +42,32 @@ bool Scenario::isValid() {
     return f_energy_set && f_protons_set;
 }
 
-units::si::HEPEnergyType   Scenario::getCut()      { return f_cut; }
-units::si::MassDensityType Scenario::getDensity()  { return f_density; }
-units::si::HEPEnergyType   Scenario::getEnergy()   { return f_energy; }
-units::si::LengthType      Scenario::getHeight()   { return f_height; }
-units::si::LengthType      Scenario::getImpact()   { return f_impact; }
-units::si::HEPMassType     Scenario::getMass()     { return f_mass; }
-float                      Scenario::getNitrogen() { return f_nitrogen; }
-std::string                Scenario::getOutput()   { return f_output; }
-double                     Scenario::getPhi()      { return f_phi; }
-bool                       Scenario::usingPythia() { return f_pythia; }
-//uint64_t                 Scenario::getSeed(); // TODO
-bool                       Scenario::usingSibyll() { return f_sibyll; }
-double                     Scenario::getTheta()    { return f_theta; }
-float                      Scenario::getOxygen()   { return f_oxygen; }
-int                        Scenario::getProtons()  { return f_protons; }
-bool                       Scenario::error()       { return f_error; }
+const unsigned short&             Scenario::getNucleons() { return f_nucleons; }
+const units::si::HEPEnergyType&   Scenario::getCut()      { return f_cut; }
+const units::si::MassDensityType& Scenario::getDensity()  { return f_density; }
+const units::si::HEPEnergyType&   Scenario::getEnergy()   { return f_energy; }
+const units::si::LengthType&      Scenario::getHeight()   { return f_height; }
+const units::si::HEPMassType&     Scenario::getMass()     { return f_mass; }
+const float&                      Scenario::getNitrogen() { return f_nitrogen; }
+const std::string&                Scenario::getOutput()   { return f_output; }
+const double&                     Scenario::getPhi()      { return f_phi; }
+const bool&                       Scenario::usingPythia() { return f_pythia; }
+//uint64_t                        Scenario::getSeed(); // TODO
+const bool&                       Scenario::usingSibyll() { return f_sibyll; }
+const double&                     Scenario::getTheta()    { return f_theta; }
+const float&                      Scenario::getOxygen()   { return f_oxygen; }
+const unsigned short&             Scenario::getProtons()  { return f_protons; }
+const bool&                       Scenario::error()       { return f_error; }
+
+geometry::Point Scenario::getImpact(const geometry::CoordinateSystem& v_coordsys) {
+    double theta = PI / 180. * f_theta; // radians
+    double phi   = PI / 180. * f_phi;   // radians
+    auto rz = f_impact;
+    auto r = rz / cos(theta);
+    auto rx = r * sin(theta) * cos(phi);
+    auto ry = r * sin(theta) * sin(phi);
+    return geometry::Point(v_coordsys, {rx, ry, rz});
+}
 
 MomentumVector Scenario::getMomentum(const geometry::CoordinateSystem& v_coordsys) {
     if (!f_energy_set || !f_mass_set) {
@@ -145,6 +155,17 @@ units::si::HEPMassType Scenario::getHEPMass() {
     return particles::GetNucleusMass(f_nucleons, f_protons);
 }
 
+unsigned short Scenario::getHEPNucleons() {
+    if (!f_mass_set || !f_protons_set) {
+        std::cout << "*** atomic number and/or mass is unset, cannot getHEPNucleons() ***\n";
+        throw std::exception {};
+    }
+    // TODO: this isn't a good model
+    units::si::HEPEnergyType p = f_protons * 938._MeV;
+    units::si::HEPEnergyType n = 940._MeV;
+    return (unsigned short) (( f_mass - p) / n);
+}
+
 int Scenario::setNucleons(const char* v_nucleons) {
     try {
         if (f_nucleons_set)
@@ -152,7 +173,10 @@ int Scenario::setNucleons(const char* v_nucleons) {
         if (f_mass_set)
             return err::INCOMPAT_ERR;
 
-        f_nucleons = std::stoi(std::string(v_nucleons));
+        int tmp = std::stoi(std::string(v_nucleons));
+        if (tmp > std::numeric_limits<unsigned short>::max() || tmp < 0)
+            throw std::range_error("0 <= atomic number <= 65535");
+        f_nucleons = (unsigned short) tmp;
         f_nucleons_set = true;
 
         if (f_protons_set) {
@@ -332,6 +356,11 @@ int Scenario::setMass(const char* v_mass) {
                 return err::FORMAT_ERR;
             f_mass = value * 1_eV;
             f_mass_set = true;
+
+            if (f_protons_set) {
+                f_nucleons = getHEPNucleons();
+                f_nucleons_set = true;
+            }
             return err::NO_ERR;
         }
 
@@ -342,6 +371,11 @@ int Scenario::setMass(const char* v_mass) {
 
         f_mass = value * getScale(mass.substr(unit_start + 1, len)) * 1_eV;
         f_mass_set = true;
+
+        if (f_protons_set) {
+            f_nucleons = getHEPNucleons();
+            f_nucleons_set = true;
+        }
     }
     catch (...) {
         return err::FORMAT_ERR;
@@ -450,10 +484,17 @@ int Scenario::setProtons(const char* v_protons) {
         if (f_protons_set)
             return err::REPEAT_ERR;
 
-        f_protons = std::stoi(std::string(v_protons));
+        int tmp = std::stoi(std::string(v_protons));
+        if (tmp > std::numeric_limits<unsigned short>::max() || tmp < 0)
+            throw std::range_error("0 <= atomic number <= 65535");
+        f_protons = (unsigned short) tmp;
         f_protons_set = true;
 
-        if (f_nucleons_set) {
+        if (f_mass_set) {
+            f_nucleons = getHEPNucleons();
+            f_nucleons_set = true;
+        }
+        else if (f_nucleons_set) {
             f_mass = getHEPMass();
             f_mass_set = true;
         }
