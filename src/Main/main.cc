@@ -10,10 +10,6 @@
 // src/Main/Utils
 #include <corsis/utils/Scenario.h>
 
-//#include <execinfo.h> /* backtrace... */
-//#include <unistd.h> /* STDERR_FILENO */
-
-
 #include <iostream>
 
 // corsika base namespace
@@ -21,22 +17,6 @@ using namespace corsika;
 
 // namespace for literals, e.g. _km, _GeV, etc...
 using namespace phys::units::literals;
-
-/*
-void handler(int sig) {
-    const int history = 20;
-    void *array[history];
-    std::size_t size;
-
-    // get void*'s for all entries on the stack
-    size = backtrace(array, history);
-
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, STDERR_FILENO);
-    exit(1);
-}
-*/
 
 
 int main(int argc, char* argv[]) {
@@ -57,11 +37,19 @@ int main(int argc, char* argv[]) {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    // it's a Mersenne Twister (std::mt19937)
-    // cascade has to be cascade for cascade.h
+    // Mersenne Twisters (std::mt19937)
+    // src/Framework/Cascade/Cascade.h
     random::RNGManager::GetInstance().RegisterRandomStream("cascade");
+    // src/Processes/Sibyll/Interaction.h, NuclearInteraction.h, and sibyll2.3c.cc
     random::RNGManager::GetInstance().RegisterRandomStream("s_rndm");
+    // src/Processes/Pythia/Interaction.h and Random.h
     random::RNGManager::GetInstance().RegisterRandomStream("pythia");
+
+    // Don't know what these are for yet:
+    // src/Processes/HadronicElasticModel/HadronicElasticModel.h
+    random::RNGManager::GetInstance().RegisterRandomStream("HadronicElasticModel");
+    // src/Processes/UrQMD/UrQMD.cc and .h
+    random::RNGManager::GetInstance().RegisterRandomStream("UrQMD");
 
     // TODO: !!! RANDOM NUMBER IS SEQUENCE IS IDENTICAL EVERY TIME ITS RUN !!!
     // (for each stream too) -- NEED TO SET THE SEED FOR UNIQUE PERFORMANCE
